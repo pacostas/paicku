@@ -1,12 +1,12 @@
 {
   "name": "paicku",
-  "description": "A cli for containerizing applications with buildpacks",
-  "version": "0.0.3",
-  "author": "NodeShift",
+  "description": "A CLI for containerizing applications with buildpacks",
+  "version": "0.0.5",
+  "author": "Red Hat, Inc.",
   "bin": {
     "paicku": "bin/run.js"
   },
-  "bugs": "https://github.com/nodeshift/nodeshift/issues",
+  "bugs": "https://github.com/nodeshift/paicku/issues",
   "dependencies": {
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
@@ -33,14 +33,14 @@
     "typescript": "^5"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20"
   },
   "files": [
     "/bin",
     "/dist",
     "/oclif.manifest.json"
   ],
-  "homepage": "https://github.com/nodeshift/nodeshift",
+  "homepage": "https://github.com/nodeshift/paicku",
   "keywords": [
     "oclif",
     "buildpack",
@@ -52,7 +52,7 @@
     "podman",
     "testcontainer"
   ],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "type": "module",
   "oclif": {
     "bin": "paicku",
@@ -71,7 +71,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nodeshift/nodeshift.git"
+    "url": "git+https://github.com/nodeshift/paicku.git"
   },
   "scripts": {
     "build": "shx rm -rf dist && tsc -b",
