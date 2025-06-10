@@ -34,4 +34,4 @@ EXAMPLES
   $ paicku builder suggest
 ```
 
-_See code: [src/commands/builder/suggest.ts](https://github.com/nodeshift/nodeshift/blob/v0.0.1/src/commands/builder/suggest.ts)_
+_See code: [src/commands/builder/suggest.ts](https://github.com/nodeshift/nodeshift/blob/v0.0.3/src/commands/builder/suggest.ts)_
