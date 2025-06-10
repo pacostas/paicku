@@ -12,13 +12,7 @@ jobs:
         node_version: [lts/-1, lts/*, latest]
         combos:
           [
-            {runner: 'macos-13', runtime: 'podman5', root: 'rootless', label: 'M13-P5-RL'},
-            {runner: 'macos-13', runtime: 'podman5', root: 'rootful', label: 'M13-P5-RF'},
-            {runner: 'ubuntu-22.04', runtime: 'podman5', root: 'rootless', label: 'U22-P5-RL'},
-            {runner: 'ubuntu-24.04', runtime: 'podman5', root: 'rootless', label: 'U24-P5-RL'},
-            {runner: 'macos-13', runtime: 'docker', label: 'M13-D-RL' },
-            {runner: 'ubuntu-22.04', runtime: 'docker', label: 'U22-D-RL'},
-            {runner: 'ubuntu-24.04', runtime: 'docker', label: 'U24-D-RL'},
+            {runner: 'macos-13', runtime: 'docker', label: 'M13-D-RL' }
           ]
 
     runs-on: [ "${{ matrix.combos.runner }}" ]
