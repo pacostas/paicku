@@ -22,14 +22,9 @@ $ npx paicku build .
 # Available commands
 
 <!-- commands -->
-
 # Command Topics
 
-- [`paicku build`](docs/build.md) - Build an image
-- [`paicku builder`](docs/builder.md) - Interact with builders
-- [`paicku help`](docs/help.md) - Display help for paicku.
-- [`paicku inspect`](docs/inspect.md) - Show information about a built app image
-- [`paicku sbom`](docs/sbom.md) - Interact with SBoM
+* [`paicku help`](docs/help.md) - Display help for paicku.
 
 <!-- commandsstop -->
 
