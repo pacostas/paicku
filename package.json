@@ -4,7 +4,7 @@
   "version": "0.0.3",
   "author": "NodeShift",
   "bin": {
-    "paicku": "./bin/run.js"
+    "paicku": "bin/run.js"
   },
   "bugs": "https://github.com/nodeshift/nodeshift/issues",
   "dependencies": {
@@ -69,13 +69,16 @@
     ],
     "topicSeparator": " "
   },
-  "repository": "nodeshift/nodeshift",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nodeshift/nodeshift.git"
+  },
   "scripts": {
     "build": "shx rm -rf dist && tsc -b",
     "lint": "eslint . --ext .ts",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "npm run lint",
-    "prepack": "oclif manifest && oclif readme",
+    "prepack": "npm run build && oclif manifest && oclif readme --multi",
     "test": "npm run unit:test && npm run integration:test",
     "integration:test": "mocha --forbid-only \"test/integration/**/*.test.ts\"",
     "integration:test:debug": "mocha \"test/integration/**/*.test.ts\"",
