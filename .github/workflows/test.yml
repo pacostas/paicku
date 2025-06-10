@@ -1,0 +1,124 @@
+name: tests
+on:
+  push:
+    branches-ignore: [main]
+  workflow_dispatch:
+
+jobs:
+  unit-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        node_version: [lts/-1, lts/*, latest]
+        combos:
+          [
+            {runner: 'macos-13', runtime: 'podman5', root: 'rootless', label: 'M13-P5-RL'},
+            {runner: 'macos-15', runtime: 'podman5', root: 'rootless', label: 'M15-P5-RL'},
+            {runner: 'macos-13', runtime: 'podman5', root: 'rootful', label: 'M13-P5-RF'},
+            {runner: 'macos-15', runtime: 'podman5', root: 'rootful', label: 'M15-P5-RF'},
+            {runner: 'ubuntu-24.04', runtime: 'podman5', root: 'rootless', label: 'U24-P5-RL'},
+            {runner: 'ubuntu-22.04', runtime: 'podman5', root: 'rootless', label: 'U22-P5-RL'},
+            {runner: 'macos-13', runtime: 'docker', label: 'M13-D-RL' },
+            {runner: 'macos-15', runtime: 'docker', label: 'M15-D-RL'},
+            {runner: 'ubuntu-24.04', runtime: 'docker', label: 'U24-D-RL'},
+            {runner: 'ubuntu-22.04', runtime: 'docker', label: 'U22-D-RL'},
+          ]
+
+    runs-on: [ "${{ matrix.combos.runner }}" ]
+    name: ${{ matrix.combos.label }}
+
+    steps:
+      # Install and configure podman for mac
+      - name: Podman5 Mac
+        if: ( matrix.combos.runner == 'macos-13' || matrix.combos.runner == 'macos-14' || matrix.combos.runner == 'macos-15' || matrix.combos.runner == 'macos-latest' ) && matrix.combos.runtime == 'podman5'
+        run: |
+          echo "Installing Podman for Mac"
+          cd /tmp
+          wget -nv "https://github.com/containers/podman/releases/download/v5.3.1/podman-installer-macos-universal.pkg"
+          sudo installer -pkg /tmp/podman-installer-macos-universal.pkg -target /
+          export PATH=$PATH:/opt/podman/bin
+          # Add Podman to path for future steps.
+          echo "/opt/podman/bin" >> $GITHUB_PATH
+          # launch podman
+          podman machine init
+          podman machine start
+          # reconfigure timeouts inside podman vm to be compatible with java docker api
+          echo 'mkdir -p /etc/containers/containers.conf.d && printf "[engine]\nservice_timeout=91\n" > /etc/containers/containers.conf.d/service-timeout.conf && systemctl restart podman.socket' |  podman machine ssh --username root --
+
+      - name: Podman Rootful (podman machine)
+        if: (matrix.combos.runner == 'macos-13' || matrix.combos.runner == 'macos-14' || matrix.combos.runner == 'macos-15' || matrix.combos.runner == 'macos-latest' || matrix.combos.runner == 'windows-latest') && matrix.combos.runtime == 'podman5' && matrix.combos.root == 'rootful'
+        run: |
+          podman system connection ls
+          podman machine stop
+          podman machine set --rootful=true
+          podman machine start
+          podman system connection ls
+
+      - name: Set up Homebrew
+        if: ( matrix.combos.runner == 'ubuntu-24.04' || matrix.combos.runner == 'ubuntu-22.04' || matrix.combos.runner == 'ubuntu-latest' ) && matrix.combos.runtime == 'podman5'
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Podman5 Ubuntu
+        if: ( matrix.combos.runner == 'ubuntu-24.04' || matrix.combos.runner == 'ubuntu-22.04' || matrix.combos.runner == 'ubuntu-latest' ) && matrix.combos.runtime == 'podman5'
+        run: |
+          echo "Configuring Podman 5 for ubuntu" 
+          # Remove the old crun executable to let brew to install a newer one ...
+          sudo apt-get update
+          sudo apt-get clean
+          sudo apt-get autoremove -y
+
+          sudo apt-get remove crun
+          
+          # Use brew to install podman 5
+          brew install podman
+          brew services start podman
+          
+          # reconfigure timeouts for podman to be compatible with java docker api
+          sudo mkdir -p /etc/containers/containers.conf.d
+          printf "[engine]\nservice_timeout=91\n" | sudo tee -a /etc/containers/containers.conf.d/service-timeout.conf
+          # restart to allow config to take effect
+          brew services restart podman
+
+      - name: Podman Rootful (native)
+        if: ( matrix.combos.runner == 'ubuntu-24.04' || matrix.combos.runner == 'ubuntu-22.04' || matrix.combos.runner == 'ubuntu-latest' ) && matrix.combos.runtime == 'podman5' && matrix.combos.root == 'rootful'
+        run: |
+          podman system connection ls
+          systemctl disable --now --user podman.socket
+          sudo systemctl enable --now podman.socket
+          echo "as a user"
+          podman info --format '{{.Host.RemoteSocket.Path}}'
+          echo "as root"
+          sudo podman info --format '{{.Host.RemoteSocket.Path}}'
+          export DOCKER_HOST=unix:///run/podman/podman.sock
+          echo "DOCKER_HOST=unix:///run/podman/podman.sock" >> $GITHUB_ENV
+          sudo ls -al /run/podman | grep podman.sock
+          sudo chmod 777 -R /run/podman
+          sudo ls -al /run/podman | grep podman.sock
+
+      - name: Docker Ubuntu
+        if: (matrix.combos.runner == 'ubuntu-24.04' ||  matrix.combos.runner == 'ubuntu-22.04' ||  matrix.combos.runner == 'ubuntu-latest')  && matrix.combos.runtime == 'docker'
+        run: |
+          echo "Configuring Docker for ubuntu" 
+          # Remove the podman, to allow library autodetect to find docker
+          sudo apt-get remove podman
+
+      - name: Podman info
+        if: matrix.combos.runtime == 'podman5'
+        run: |
+          echo "Podman information"
+          podman info
+
+      - name: Docker info
+        if: matrix.combos.runtime == 'docker'
+        run: |
+          echo "Docker information"
+          docker info
+
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node_version }}
+          cache: npm
+      - run: npm install
+      - run: npm run build
+      - run: npm run unit:test
