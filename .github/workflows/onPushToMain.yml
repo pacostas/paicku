@@ -29,6 +29,8 @@ jobs:
             echo "skipped=false" >> $GITHUB_OUTPUT
             echo "tag=v$package_version" >> $GITHUB_OUTPUT
           fi
+        env:
+          NODESHIFT_RELEASES_TOKEN: ${{ secrets.NODESHIFT_RELEASES_TOKEN }}
 
       - name: Setup git
         if: ${{ steps.version-check.outputs.skipped == 'false' }}
@@ -56,5 +58,5 @@ jobs:
           name: ${{ steps.version-check.outputs.tag }}
           tag: ${{ steps.version-check.outputs.tag }}
           commit: ${{ github.ref_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.NODESHIFT_RELEASES_TOKEN }}
           skipIfReleaseExists: true
