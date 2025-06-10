@@ -13,15 +13,12 @@ jobs:
         combos:
           [
             {runner: 'macos-13', runtime: 'podman5', root: 'rootless', label: 'M13-P5-RL'},
-            {runner: 'macos-15', runtime: 'podman5', root: 'rootless', label: 'M15-P5-RL'},
             {runner: 'macos-13', runtime: 'podman5', root: 'rootful', label: 'M13-P5-RF'},
-            {runner: 'macos-15', runtime: 'podman5', root: 'rootful', label: 'M15-P5-RF'},
-            {runner: 'ubuntu-24.04', runtime: 'podman5', root: 'rootless', label: 'U24-P5-RL'},
             {runner: 'ubuntu-22.04', runtime: 'podman5', root: 'rootless', label: 'U22-P5-RL'},
+            {runner: 'ubuntu-24.04', runtime: 'podman5', root: 'rootless', label: 'U24-P5-RL'},
             {runner: 'macos-13', runtime: 'docker', label: 'M13-D-RL' },
-            {runner: 'macos-15', runtime: 'docker', label: 'M15-D-RL'},
-            {runner: 'ubuntu-24.04', runtime: 'docker', label: 'U24-D-RL'},
             {runner: 'ubuntu-22.04', runtime: 'docker', label: 'U22-D-RL'},
+            {runner: 'ubuntu-24.04', runtime: 'docker', label: 'U24-D-RL'},
           ]
 
     runs-on: [ "${{ matrix.combos.runner }}" ]
@@ -44,6 +41,10 @@ jobs:
           podman machine start
           # reconfigure timeouts inside podman vm to be compatible with java docker api
           echo 'mkdir -p /etc/containers/containers.conf.d && printf "[engine]\nservice_timeout=91\n" > /etc/containers/containers.conf.d/service-timeout.conf && systemctl restart podman.socket' |  podman machine ssh --username root --
+
+      - name: Docker Mac
+        if: ( matrix.combos.runner == 'macos-13' || matrix.combos.runner == 'macos-14' || matrix.combos.runner == 'macos-15' || matrix.combos.runner == 'macos-latest' ) && matrix.combos.runtime == 'docker'
+        uses: douglascamata/setup-docker-macos-action@v1
 
       - name: Podman Rootful (podman machine)
         if: (matrix.combos.runner == 'macos-13' || matrix.combos.runner == 'macos-14' || matrix.combos.runner == 'macos-15' || matrix.combos.runner == 'macos-latest' || matrix.combos.runner == 'windows-latest') && matrix.combos.runtime == 'podman5' && matrix.combos.root == 'rootful'
