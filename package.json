@@ -1,7 +1,7 @@
 {
   "name": "paicku",
-  "description": "A cli for containerizing applications",
-  "version": "0.0.1",
+  "description": "A cli for containerizing applications with buildpacks",
+  "version": "0.0.3",
   "author": "NodeShift",
   "bin": {
     "paicku": "./bin/run.js"
