@@ -1,7 +1,7 @@
 {
   "name": "paicku",
   "description": "A CLI for containerizing applications with buildpacks",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "author": "Red Hat, Inc.",
   "bin": {
     "paicku": "bin/run.js"
