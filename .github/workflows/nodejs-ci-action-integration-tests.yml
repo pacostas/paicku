@@ -24,10 +24,10 @@ jobs:
       matrix:
         node_version: [22.x, 24.x, 26.x]
         combos:
-          - runner: "ubuntu-22.04"
-            runtime: "podman5"
-            root: "rootless"
-            label: "U22-P5-RL"
+          # - runner: "ubuntu-22.04"
+          #   runtime: "podman5"
+          #   root: "rootless"
+          #   label: "U22-P5-RL"
 
           - runner: "ubuntu-24.04"
             runtime: "podman5"
@@ -39,9 +39,9 @@ jobs:
           #   root: "rootless"
           #   label: "U26-P5-RL"
 
-          - runner: "ubuntu-22.04"
-            runtime: "docker"
-            label: "U22-D-RL"
+          # - runner: "ubuntu-22.04"
+          #   runtime: "docker"
+          #   label: "U22-D-RL"
 
           - runner: "ubuntu-24.04"
             runtime: "docker"
@@ -70,7 +70,7 @@ jobs:
     steps:
       # Install and configure podman for mac
       - name: Podman5 Mac
-        if: ( matrix.combos.runner == 'macos-13' || matrix.combos.runner == 'macos-14' || matrix.combos.runner == 'macos-15' || matrix.combos.runner == 'macos-latest' ) && matrix.combos.runtime == 'podman5'
+        if: startsWith(matrix.combos.runner, 'macos') && matrix.combos.runtime == 'podman5'
         run: |
           echo "Installing Podman for Mac"
           cd /tmp
@@ -86,11 +86,11 @@ jobs:
           echo 'mkdir -p /etc/containers/containers.conf.d && printf "[engine]\nservice_timeout=91\n" > /etc/containers/containers.conf.d/service-timeout.conf && systemctl restart podman.socket' |  podman machine ssh --username root --
 
       - name: Docker Mac
-        if: ( matrix.combos.runner == 'macos-13' || matrix.combos.runner == 'macos-14' || matrix.combos.runner == 'macos-15' || matrix.combos.runner == 'macos-latest' ) && matrix.combos.runtime == 'docker'
+        if: startsWith(matrix.combos.runner, 'macos') && matrix.combos.runtime == 'docker'
         uses: douglascamata/setup-docker-macos-action@v1
 
       - name: Podman MacRootful (podman machine)
-        if: (matrix.combos.runner == 'macos-13' || matrix.combos.runner == 'macos-14' || matrix.combos.runner == 'macos-15' || matrix.combos.runner == 'macos-latest' || matrix.combos.runner == 'windows-latest') && matrix.combos.runtime == 'podman5' && matrix.combos.root == 'rootful'
+        if: startsWith(matrix.combos.runner, 'macos') && matrix.combos.runtime == 'podman5' && matrix.combos.root == 'rootful'
         run: |
           podman system connection ls
           podman machine stop
@@ -98,33 +98,19 @@ jobs:
           podman machine start
           podman system connection ls
 
-      - name: Set up Homebrew
-        if: ( matrix.combos.runner == 'ubuntu-24.04' || matrix.combos.runner == 'ubuntu-22.04' || matrix.combos.runner == 'ubuntu-latest' ) && matrix.combos.runtime == 'podman5'
-        uses: Homebrew/actions/setup-homebrew@master
+      - name: Install Podman (Ubuntu)
+        if: startsWith(matrix.combos.runner, 'ubuntu') && matrix.combos.runtime == 'podman5'
+        uses: redhat-actions/podman-install@main
 
-      - name: Podman5 Ubuntu
-        if: ( matrix.combos.runner == 'ubuntu-24.04' || matrix.combos.runner == 'ubuntu-22.04' || matrix.combos.runner == 'ubuntu-latest' ) && matrix.combos.runtime == 'podman5'
+      - name: Configure Podman Timeouts (Ubuntu)
+        if: startsWith(matrix.combos.runner, 'ubuntu') && matrix.combos.runtime == 'podman5'
         run: |
-          echo "Configuring Podman 5 for ubuntu" 
-          # Remove the old crun executable to let brew to install a newer one ...
-          sudo apt-get update
-          sudo apt-get clean
-          sudo apt-get autoremove -y
-
-          sudo apt-get remove crun
-
-          # Use brew to install podman 5
-          brew install podman
-          brew services start podman
-
-          # reconfigure timeouts for podman to be compatible with java docker api
+          echo "Configuring timeouts for podman to be compatible with java docker api"
           sudo mkdir -p /etc/containers/containers.conf.d
           printf "[engine]\nservice_timeout=91\n" | sudo tee -a /etc/containers/containers.conf.d/service-timeout.conf
-          # restart to allow config to take effect
-          brew services restart podman
 
       - name: Podman Ubuntu Rootful (native)
-        if: ( matrix.combos.runner == 'ubuntu-24.04' || matrix.combos.runner == 'ubuntu-22.04' || matrix.combos.runner == 'ubuntu-latest' ) && matrix.combos.runtime == 'podman5' && matrix.combos.root == 'rootful'
+        if: startsWith(matrix.combos.runner, 'ubuntu') && matrix.combos.runtime == 'podman5' && matrix.combos.root == 'rootful'
         run: |
           podman system connection ls
           systemctl disable --now --user podman.socket
@@ -140,7 +126,7 @@ jobs:
           sudo ls -al /run/podman | grep podman.sock
 
       - name: Docker Ubuntu
-        if: (matrix.combos.runner == 'ubuntu-24.04' || matrix.combos.runner == 'ubuntu-22.04' || matrix.combos.runner == 'ubuntu-26.04' || matrix.combos.runner == 'ubuntu-latest') && matrix.combos.runtime == 'docker'
+        if: startsWith(matrix.combos.runner, 'ubuntu') && matrix.combos.runtime == 'docker'
         run: |
           echo "Configuring Docker for ubuntu" 
           # Remove the podman, to allow library autodetect to find docker
@@ -165,6 +151,7 @@ jobs:
           cache: npm
       - run: npm install
       - run: npm run build
+      
       - name: Log in to GHCR (docker)
         if: matrix.combos.runtime == 'docker'
         uses: docker/login-action@v4
@@ -185,8 +172,15 @@ jobs:
             RUNTIME=podman
           fi
 
-          $RUNTIME pull "${{ env.GHCR_BUILDER_IMAGE }}"
-          $RUNTIME tag "${{ env.GHCR_BUILDER_IMAGE }}" "${{ env.SOURCE_BUILDER_IMAGE }}"
+          echo "Attempting to pull from GHCR..."
+          if $RUNTIME pull "${{ env.GHCR_BUILDER_IMAGE }}"; then
+            echo "Successfully pulled from GHCR. Tagging image..."
+            $RUNTIME tag "${{ env.GHCR_BUILDER_IMAGE }}" "${{ env.SOURCE_BUILDER_IMAGE }}"
+          else
+            echo "Image not found in GHCR (manifest unknown). Falling back to source image..."
+            $RUNTIME pull "${{ env.SOURCE_BUILDER_IMAGE }}"
+          fi
+          
       - name: Run integration tests
         run: |
           if [ "${{ matrix.combos.runtime }}" = "docker" ]; then
