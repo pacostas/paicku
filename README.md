@@ -51,22 +51,18 @@ import {createPaicku} from 'paicku'
 
 const paicku = createPaicku()
 
-//  Build your containerized application image
+console.log('Containerizing app...')
 const image = await paicku.build({path: './app'})
 
-// Run the image
+console.log('Starting container')
 const container = await image.run({exposedPorts: 8080})
 
-try {
-  // Make a request to the running container application
-  const response = await fetch(container.getUrl())
+// Make a request to the running container application
+const response = await fetch(container.getUrl())
 
-  // Print the response
-  console.log(await response.text())
-} finally {
-  // Always clean up
-  await container.stop()
-}
+console.log('Response status:', response.status)
+console.log('Stopping and removing container...')
+await container.stop()
 ```
 
 **Note:** See [paicku examples](https://github.com/nodeshift-starters/paicku-examples/) for complete scripts.
@@ -87,51 +83,43 @@ The ClI and Nodee.js library, support the following topics
 
 ## Node.js and CLI Examples
 
-### Writing tests with Mocha and SuperTest:
+### Writing tests with Mocha and Chai:
 
 Node.js
 
 ```javascript
 import {expect} from 'chai'
 import {after, before, describe, it} from 'mocha'
-import request from 'supertest'
 import {createPaicku, PaickuError} from 'paicku'
 
-describe('Mocha + Supertest', function () {
+const appPath = './app'
+const appPort = 8080
+
+describe('Mocha, Chai and Paicku', function () {
   this.timeout(600_000) // Give some time for the build to complete
 
-  describe('Build and Run a Node.js App', () => {
-    const paicku = createPaicku()
+  const paicku = createPaicku()
 
-    let containerImage
-    let container
+  let containerImage
+  let container
 
-    before(async () => {
-      try {
-        containerImage = await paicku.build({
-          builder: 'docker.io/paketobuildpacks/ubuntu-noble-builder',
-          imageName: 'my-image-name', // omit in case your want to be a random name
-          path: './path',
-        })
-      } catch (error) {
-        if (error instanceof PaickuError) {
-          console.log(error.stderr)
-        }
-        throw error
-      }
+  before(async () => {
+    containerImage = await paicku.build({
+      builder: 'docker.io/paketobuildpacks/builder-ubi8-base',
+      path: appPath,
     })
+  })
 
-    after(async () => {
-      if (container) {
-        await container.stop()
-      }
-    })
+  after(async () => {
+    if (container) {
+      await container.stop()
+    }
+  })
 
-    it('should successfully build, start, and serve the application', async () => {
-      container = await containerImage.run({exposedPorts: 8080})
-      const response = await request(container.getUrl()).get('/')
-      expect(response.status).to.equal(200)
-    })
+  it('should successfully build and run an app', async () => {
+    container = await containerImage.run({exposedPorts: appPort})
+    const response = await fetch(container.getUrl())
+    expect(response.status).to.equal(200)
   })
 })
 ```
@@ -151,12 +139,12 @@ const paicku = createPaicku({
 
 ### Selecting container runtime
 
-You can choose which container runtime you prefer [docker or podman]:
+You can choose which container runtime you prefer [podman or docker]:
 
 CLI:
 
 ```sh
-paicku build my-app --container-runtime podman
+paicku build my-app --container-runtime docker
 ```
 
 Node.js:
@@ -166,7 +154,7 @@ const paicku = createPaicku()
 
 const result = await paicku.build({
   imageName: 'my-app',
-  'container-runtime': 'podman',
+  'container-runtime': 'docker',
 })
 ```
 
