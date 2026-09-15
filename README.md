@@ -1,6 +1,6 @@
 # Paicku
 
-Paicku, is a Node.js library and command-line application for containerizing applications with buildpacks. It is a wrapper around Cloud Native Buildpacks' [pack CLI](https://github.com/buildpacks/pack).
+Paicku is a Node.js library and command-line application for containerizing applications with buildpacks. It is a wrapper around Cloud Native Buildpacks' [pack CLI](https://github.com/buildpacks/pack).
 
 ## Why?
 
@@ -42,7 +42,7 @@ paicku build --path ./app
 
 ### Node.js library
 
-To use Paicku, ensure you've installed the depenency, then import the `createPaicku` object.
+To use Paicku, ensure you've installed the dependency, then import the `createPaicku` function.
 
 Here's a minimal example
 
@@ -57,9 +57,7 @@ const image = await paicku.build({path: './app'})
 console.log('Starting container')
 const container = await image.run({exposedPorts: 8080})
 
-// Make a request to the running container application
 const response = await fetch(container.getUrl())
-
 console.log('Response status:', response.status)
 console.log('Stopping and removing container...')
 await container.stop()
@@ -71,7 +69,7 @@ await container.stop()
 
 ## Command Topics
 
-The ClI and Nodee.js library, support the following topics
+The CLI and Node.js library support the following topics
 
 - [`paicku build`](docs/build.md) - Build an image
 - [`paicku builder`](docs/builder.md) - Display suggested builders for the given application
@@ -83,9 +81,9 @@ The ClI and Nodee.js library, support the following topics
 
 ## Node.js and CLI Examples
 
-### Writing tests with Mocha and Chai:
+### Writing tests with Mocha and Chai
 
-Node.js
+[`mocha-chai.test.js`](https://github.com/nodeshift-starters/paicku-examples/blob/main/mocha-chai.test.js)
 
 ```javascript
 import {expect} from 'chai'
@@ -154,11 +152,12 @@ const paicku = createPaicku()
 
 const result = await paicku.build({
   imageName: 'my-app',
+  path: './app',
   'container-runtime': 'docker',
 })
 ```
 
-### Build with a specific builder and environement variables
+### Build with a specific builder and environment variables
 
 CLI:
 
@@ -177,8 +176,9 @@ const paicku = createPaicku()
 const result = await paicku.build({
   imageName: 'nodejs-noble-container-image',
   builder: 'docker.io/paketobuildpacks/ubuntu-noble-builder',
-  runtImage: 'docker.io/aketobuildpacks/ubuntu-noble-run-tiny',
+  'run-image': 'docker.io/paketobuildpacks/ubuntu-noble-run-tiny',
   env: ['BP_LAUNCH_WITH_TINI=true'],
+  path: './app',
 })
 ```
 
