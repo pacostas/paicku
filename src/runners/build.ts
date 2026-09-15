@@ -94,7 +94,7 @@ export async function runBuild(
 
   if (!resolvedImageName) {
     resolvedImageName = `image-paicku-${crypto.randomUUID()}`
-    console.warn(`You havent specified an image name, using a random one: ${resolvedImageName}`)
+    console.warn(`You haven't specified an image name, using a random one: ${resolvedImageName}`)
   }
 
   if (!flags.builder) {
